@@ -34,46 +34,72 @@ class PackProcessor {
         }
     }
 
-    static compareImages(rect1, rect2, didTrim) {
-        //return rect1.image._base64 == rect2.image._base64;
-        if(!didTrim) {
-            if(rect1.image._base64 === rect2.image._base64) {
-                return true;
-            }
-            return rect1.image.src === rect2.image.src;
-        }
-
-        /*if(rect1.image.cachedDetection !== undefined) {
-            if(rect1.image.cachedDetection[rect2.image]) {
-                return true;
-            }
-        } else {
-            rect1.image.cachedDetection = [];
-        }
-        if(rect2.image.cachedDetection !== undefined) {
-            if(rect2.image.cachedDetection[rect1.image]) {
-                return true;
-            }
-        } else {
-            rect2.image.cachedDetection = [];
-        }*/
-
+static compareImages(rect1, rect2, didTrim) {
+    //y base64??? js do it how we always did yo!
+    if (didTrim) {
         var i1 = rect1.trimmedImage;
         var i2 = rect2.trimmedImage;
 
-        //return i1 === i2;
-
-        if(i1.length !== i2.length) return false;
-
-        var length = i1.length;
-
-        while(length--) {
-            if(i1[length] !== i2[length]) return false;
+        if (i1.length !== i2.length) {
+            return false;
         }
-        //rect1.image.cachedDetection.push(rect2.image);
-        //rect2.image.cachedDetection.push(rect1.image);
+
+        for (var i = 0; i < i1.length; i++) {
+            if (i1[i] !== i2[i]) {
+                return false;
+            }
+        }
+
         return true;
     }
+
+    var img1 = rect1.image;
+    var img2 = rect2.image;
+
+    if (img1.width !== img2.width || img1.height !== img2.height) {
+        return false;
+    }
+
+    var canvas1 = document.createElement("canvas");
+    var canvas2 = document.createElement("canvas");
+
+    canvas1.width = img1.width;
+    canvas1.height = img1.height;
+    canvas2.width = img2.width;
+    canvas2.height = img2.height;
+
+    var ctx1 = canvas1.getContext("2d");
+    var ctx2 = canvas2.getContext("2d");
+
+    ctx1.drawImage(img1, 0, 0);
+    ctx2.drawImage(img2, 0, 0);
+
+    var data1 = ctx1.getImageData(
+        0,
+        0,
+        img1.width,
+        img1.height
+    ).data;
+
+    var data2 = ctx2.getImageData(
+        0,
+        0,
+        img2.width,
+        img2.height
+    ).data;
+
+    if (data1.length !== data2.length) {
+        return false;
+    }
+
+    for (var i = 0; i < data1.length; i++) {
+        if (data1[i] !== data2[i]) {
+            return false;
+        }
+    }
+
+    return true;
+}
 
     static applyIdentical(rects, identical) {
         let clones = [];
