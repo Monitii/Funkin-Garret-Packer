@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout
@@ -22,11 +22,14 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 14
           cache: yarn
 
+      - name: Install Yarn
+        run: npm install -g yarn@1.22.22
+
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: yarn install --ignore-engines
 
       - name: Build web version
         run: yarn build-web
@@ -38,7 +41,7 @@ jobs:
 
   deploy:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     environment:
       name: github-pages
