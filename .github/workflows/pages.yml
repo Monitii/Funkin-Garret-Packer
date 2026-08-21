@@ -32,7 +32,7 @@ jobs:
         run: yarn install --ignore-engines
 
       - name: Build web version
-        run: yarn build-web
+        run: yarn webpack
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
