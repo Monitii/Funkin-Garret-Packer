@@ -27,6 +27,7 @@ class ImagesList extends React.Component {
         this.loadImagesComplete = this.loadImagesComplete.bind(this);
         this.clear = this.clear.bind(this);
         this.deleteSelectedImages = this.deleteSelectedImages.bind(this);
+        this.renameCurrentImage = this.renameCurrentImage.bind(this);
         this.doClear = this.doClear.bind(this);
         this.onFilesDrop = this.onFilesDrop.bind(this);
         this.handleImageItemSelected = this.handleImageItemSelected.bind(this);
@@ -59,6 +60,10 @@ class ImagesList extends React.Component {
 		if(e) {
             let key = e.keyCode || e.which;
             if(key === 65 && e.ctrlKey) this.selectAllImages();
+            if(key === 113) {
+                e.preventDefault();
+                this.renameCurrentImage();
+            }
         }
 	}
 
@@ -486,6 +491,42 @@ class ImagesList extends React.Component {
         }
     }
 
+    renameCurrentImage() {
+        let images = this.state.images;
+        let currentPath = Object.keys(images).find(path => images[path].current);
+
+        if(!currentPath) {
+            Observer.emit(GLOBAL_EVENT.SHOW_MESSAGE, "Select a frame to rename it.");
+            return;
+        }
+
+        let pathParts = currentPath.split("/");
+        let currentName = pathParts.pop();
+        let newName = window.prompt("Rename frame:", currentName);
+        if(newName === null) return;
+
+        newName = newName.trim();
+        if(!newName || newName === "." || newName === ".." || /[\\/]/.test(newName)) {
+            Observer.emit(GLOBAL_EVENT.SHOW_MESSAGE, "Enter a valid frame name without a folder path.");
+            return;
+        }
+
+        let newPath = pathParts.concat(newName).join("/");
+        if(newPath === currentPath) return;
+        if(Object.prototype.hasOwnProperty.call(images, newPath)) {
+            Observer.emit(GLOBAL_EVENT.SHOW_MESSAGE, "A frame with that name already exists.");
+            return;
+        }
+
+        let renamedImages = {};
+        Object.keys(images).forEach(path => {
+            renamedImages[path === currentPath ? newPath : path] = images[path];
+        });
+
+        this.setImages(this.sortImages(renamedImages));
+        this.emitSelectedChanges();
+    }
+
     renderWebButtons() {
         return (
             <span>
@@ -532,6 +573,9 @@ class ImagesList extends React.Component {
 
                     <div className="btn back-800 border-color-gray color-white" onClick={this.deleteSelectedImages} title={I18.f("DELETE_TITLE")}>
                         {I18.f("DELETE")}
+                    </div>
+                    <div className="btn back-800 border-color-gray color-white" onClick={this.renameCurrentImage} title="Rename selected frame (F2)">
+                        Rename
                     </div>
                     <div className="btn back-800 border-color-gray color-white" onClick={this.clear} title={I18.f("CLEAR_TITLE")}>
                         {I18.f("CLEAR")}
