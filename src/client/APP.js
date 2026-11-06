@@ -7,6 +7,25 @@ import { startExporter } from './exporters';
 //import Tinifyer from 'platform/Tinifyer';
 import Downloader from 'platform/Downloader';
 
+function canvasToBlob(canvas, mimeType) {
+    return new Promise((resolve, reject) => {
+        if (!canvas.toBlob) {
+            reject(new Error("This browser cannot encode the texture canvas."));
+            return;
+        }
+        canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error("The texture image could not be encoded.")), mimeType);
+    });
+}
+
+function blobToBase64(blob) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result).split(",")[1] || "");
+        reader.onerror = () => reject(reader.error || new Error("Could not read the encoded texture."));
+        reader.readAsDataURL(blob);
+    });
+}
+
 let INSTANCE = null;
 
 class APP {
@@ -169,11 +188,19 @@ class APP {
             let fName = textureName + (this.packResult.length > 1 ? "-" + ix : "");
 
             let buffer = item.renderer.scale(this.packOptions.scale);
-
-            let imageData = filter.apply(buffer).toDataURL(this.packOptions.textureFormat === "png" ? "image/png" : "image/jpeg");
-            let parts = imageData.split(",");
-            parts.shift();
-            imageData = parts.join(",");
+            let exportCanvas = filter.apply(buffer);
+            let mimeType = this.packOptions.textureFormat === "png" ? "image/png" : "image/jpeg";
+            let imageBlob;
+            let imageData = "";
+            try {
+                imageBlob = await canvasToBlob(exportCanvas, mimeType);
+                if (this.packOptions.base64Export) imageData = await blobToBase64(imageBlob);
+            }
+            catch (e) {
+                Observer.emit(GLOBAL_EVENT.HIDE_SHADER);
+                Observer.emit(GLOBAL_EVENT.SHOW_MESSAGE, e.message || e);
+                return;
+            }
 
             /*try {
                 imageData = await Tinifyer.start(imageData, this.packOptions);
@@ -186,8 +213,8 @@ class APP {
 
             files.push({
                 name: `${fName}.${this.packOptions.textureFormat}`,
-                content: imageData,
-                base64: true
+                content: imageBlob,
+                base64: false
             });
 
             //TODO: move to options

@@ -19,10 +19,21 @@ class Downloader {
         if(dir) {
             dir = String(dir);
 
-            let complete = () => {
+            let complete = async () => {
                 for(let file of files) {
                     let content = file.content;
                     if(file.base64) content = Buffer.from(content, 'base64');
+                    else if(content && typeof content.arrayBuffer === 'function') {
+                        content = Buffer.from(await content.arrayBuffer());
+                    }
+                    else if(content && typeof Blob !== 'undefined' && content instanceof Blob) {
+                        content = await new Promise((resolve, reject) => {
+                            let reader = new FileReader();
+                            reader.onload = () => resolve(Buffer.from(reader.result));
+                            reader.onerror = () => reject(reader.error);
+                            reader.readAsArrayBuffer(content);
+                        });
+                    }
 
                     let savePath = path.normalize(dir + "/" + file.name);
                     savePath = savePath.split("\\").join("/");
