@@ -204,9 +204,8 @@ class APP {
             let imageData = "";
             try {
                 imageBlob = await canvasToBlob(exportCanvas, mimeType);
-                if (!buffer.width || !buffer.height || !imageBlob.size) {
-                    throw new Error("The texture canvas exported empty. Check the sheet dimensions and scale, then try again.");
-                }
+                if (!buffer.width || !buffer.height) throw new Error(`Texture canvas has invalid dimensions: ${buffer.width} × ${buffer.height}.`);
+                if (!imageBlob.size) throw new Error(`The browser encoded an empty ${buffer.width} × ${buffer.height} texture. Try reducing the sheet size or export scale.`);
                 imageBytes = await blobToBytes(imageBlob);
                 if (!imageBytes.length) throw new Error("The encoded texture contains no image data.");
                 if (this.packOptions.base64Export) imageData = await blobToBase64(imageBlob);
@@ -229,7 +228,8 @@ class APP {
             files.push({
                 name: `${fName}.${this.packOptions.textureFormat}`,
                 content: imageBytes,
-                base64: false
+                base64: false,
+                compression: "STORE"
             });
 
             //TODO: move to options
