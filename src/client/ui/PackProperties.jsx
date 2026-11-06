@@ -78,6 +78,7 @@ class PackProperties extends React.Component {
         data.scale = data.scale || 1;
         data.ditherSprites = data.ditherSprites === undefined ? false : data.ditherSprites;
         data.ditherColors = Math.max(2, Math.min(256, Number(data.ditherColors) || 16));
+        data.ditherLowBleed = data.ditherLowBleed === undefined ? true : data.ditherLowBleed;
         data.filter = getFilterByType(data.filter) ? data.filter : filters[0].type;
         data.exporter = getExporterByType(data.exporter) ? data.exporter : exporters[0].type;
         data.base64Export = data.base64Export === undefined ? false : data.base64Export;
@@ -138,6 +139,7 @@ class PackProperties extends React.Component {
         data.scale = Number(ReactDOM.findDOMNode(this.refs.scale).value);
         data.ditherSprites = ReactDOM.findDOMNode(this.refs.ditherSprites).checked;
         data.ditherColors = Number(ReactDOM.findDOMNode(this.refs.ditherColors).value);
+        data.ditherLowBleed = ReactDOM.findDOMNode(this.refs.ditherLowBleed).value === "low";
         data.filter = ReactDOM.findDOMNode(this.refs.filter).value;
         data.exporter = ReactDOM.findDOMNode(this.refs.exporter).value;
         data.fileName = ReactDOM.findDOMNode(this.refs.fileName).value;
@@ -171,6 +173,7 @@ class PackProperties extends React.Component {
         ReactDOM.findDOMNode(this.refs.scale).value = Number(this.packOptions.scale);
         ReactDOM.findDOMNode(this.refs.ditherSprites).checked = this.packOptions.ditherSprites;
         ReactDOM.findDOMNode(this.refs.ditherColors).value = this.packOptions.ditherColors;
+        ReactDOM.findDOMNode(this.refs.ditherLowBleed).value = this.packOptions.ditherLowBleed ? "low" : "normal";
         ReactDOM.findDOMNode(this.refs.filter).value = this.packOptions.filter;
         ReactDOM.findDOMNode(this.refs.exporter).value = this.packOptions.exporter;
         ReactDOM.findDOMNode(this.refs.fileName).value = this.packOptions.fileName;
@@ -336,6 +339,14 @@ class PackProperties extends React.Component {
                             <tr title="Maximum distinct colors used by each sprite. Floyd–Steinberg distributes quantization error within that sprite.">
                                 <td>Colors per sprite</td>
                                 <td><input ref="ditherColors" type="number" className="border-color-gray" min="2" max="256" step="1" defaultValue={this.packOptions.ditherColors} onBlur={this.onPropChanged} onKeyDown={this.forceUpdate}/></td>
+                                <td></td>
+                            </tr>
+                            <tr title="Low-bleed limits diffusion error to reduce color weirdness. Normal spreads more for smoother gradients, but sometimes may look iffy on some sprites.">
+                                <td>Dither bleed</td>
+                                <td><select ref="ditherLowBleed" className="border-color-gray" defaultValue={this.packOptions.ditherLowBleed ? "low" : "normal"} onChange={this.onPropChanged}>
+                                    <option value="low">Less color bleed (GIMP low-bleed)</option>
+                                    <option value="normal">Normal Floyd–Steinberg</option>
+                                </select></td>
                                 <td></td>
                             </tr>
                             <tr title={I18.f("FILTER_TITLE")}>

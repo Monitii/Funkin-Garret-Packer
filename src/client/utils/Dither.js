@@ -38,7 +38,7 @@ function makePalette(colors, limit) {
     });
 }
 
-export function ditherImageData(imageData, colorLimit = 16) {
+export function ditherImageData(imageData, colorLimit = 16, lowBleed = true) {
     const { data, width, height } = imageData;
     const limit = Math.max(2, Math.min(256, Math.floor(Number(colorLimit) || 16)));
     const histogram = new Map();
@@ -77,7 +77,20 @@ export function ditherImageData(imageData, colorLimit = 16) {
             }
             for (let c = 0; c < 3; c++) data[i + c] = palette[best][c];
             const error = adjusted.map((v, c) => v - linearPalette[best][c]);
-            const bounded = error.map(v => Math.sign(v) * Math.min(0.1875, Math.abs(v)));
+            const bounded = error.map(v => {
+                const magnitude = Math.abs(v);
+                let limited;
+                if (lowBleed) {
+                    const firstLimit = 24 / 255;
+                    const secondLimit = 48 / 255;
+                    limited = magnitude < firstLimit ? magnitude
+                        : magnitude < secondLimit ? (magnitude - firstLimit) / 2 + firstLimit
+                        : secondLimit;
+                } else {
+                    limited = Math.min(magnitude, 192 / 255);
+                }
+                return Math.sign(v) * limited;
+            });
             const forward = reverse ? -1 : 1;
             const add = (array, px, channel, amount) => {
                 if (px < 0 || px >= width) return;
