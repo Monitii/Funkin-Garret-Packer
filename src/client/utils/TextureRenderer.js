@@ -82,7 +82,7 @@ class TextureRenderer {
                 const width = item.rotated ? item.frame.h : item.frame.w;
                 const height = item.rotated ? item.frame.w : item.frame.h;
                 const sprite = ctx.getImageData(x, y, width, height);
-                ctx.putImageData(ditherImageData(sprite, options.ditherLevels || 4), x, y);
+                ctx.putImageData(ditherImageData(sprite, options.ditherColors || 16), x, y);
             }
         }
 
