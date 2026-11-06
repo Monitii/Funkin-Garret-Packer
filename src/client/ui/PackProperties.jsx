@@ -76,6 +76,9 @@ class PackProperties extends React.Component {
         data.removeFileExtension = data.removeFileExtension === undefined ? true : data.removeFileExtension;
         data.prependFolderName = data.prependFolderName === undefined ? true : data.prependFolderName;
         data.scale = data.scale || 1;
+        data.ditherSprites = data.ditherSprites === undefined ? false : data.ditherSprites;
+        data.ditherLevels = Number(data.ditherLevels) || 4;
+        data.pngBitDepth = [32, 24, 8].indexOf(Number(data.pngBitDepth)) >= 0 ? Number(data.pngBitDepth) : 32;
         data.filter = getFilterByType(data.filter) ? data.filter : filters[0].type;
         data.exporter = getExporterByType(data.exporter) ? data.exporter : exporters[0].type;
         data.base64Export = data.base64Export === undefined ? false : data.base64Export;
@@ -134,6 +137,9 @@ class PackProperties extends React.Component {
         //data.tinify = ReactDOM.findDOMNode(this.refs.tinify).checked;
         //data.tinifyKey = ReactDOM.findDOMNode(this.refs.tinifyKey).value;
         data.scale = Number(ReactDOM.findDOMNode(this.refs.scale).value);
+        data.ditherSprites = ReactDOM.findDOMNode(this.refs.ditherSprites).checked;
+        data.ditherLevels = Number(ReactDOM.findDOMNode(this.refs.ditherLevels).value);
+        data.pngBitDepth = Number(ReactDOM.findDOMNode(this.refs.pngBitDepth).value);
         data.filter = ReactDOM.findDOMNode(this.refs.filter).value;
         data.exporter = ReactDOM.findDOMNode(this.refs.exporter).value;
         data.fileName = ReactDOM.findDOMNode(this.refs.fileName).value;
@@ -165,6 +171,9 @@ class PackProperties extends React.Component {
         //ReactDOM.findDOMNode(this.refs.tinify).checked = this.packOptions.tinify;
         //ReactDOM.findDOMNode(this.refs.tinifyKey).value = this.packOptions.tinifyKey;
         ReactDOM.findDOMNode(this.refs.scale).value = Number(this.packOptions.scale);
+        ReactDOM.findDOMNode(this.refs.ditherSprites).checked = this.packOptions.ditherSprites;
+        ReactDOM.findDOMNode(this.refs.ditherLevels).value = this.packOptions.ditherLevels;
+        ReactDOM.findDOMNode(this.refs.pngBitDepth).value = this.packOptions.pngBitDepth;
         ReactDOM.findDOMNode(this.refs.filter).value = this.packOptions.filter;
         ReactDOM.findDOMNode(this.refs.exporter).value = this.packOptions.exporter;
         ReactDOM.findDOMNode(this.refs.fileName).value = this.packOptions.fileName;
@@ -320,6 +329,25 @@ class PackProperties extends React.Component {
                             <tr title={I18.f("SCALE_TITLE")}>
                                 <td>{I18.f("SCALE")}</td>
                                 <td><input ref="scale" type="number" min="0" className="border-color-gray" defaultValue={this.packOptions.scale} onBlur={this.onPropChanged}/></td>
+                                <td></td>
+                            </tr>
+                            <tr title="Apply Floyd–Steinberg dithering independently inside each sprite">
+                                <td>Sprite dithering</td>
+                                <td><input ref="ditherSprites" type="checkbox" className="border-color-gray" defaultChecked={this.packOptions.ditherSprites} onChange={this.onPropChanged} /></td>
+                                <td></td>
+                            </tr>
+                            <tr title="Number of color levels per channel after dithering">
+                                <td>Dither levels</td>
+                                <td><select ref="ditherLevels" className="border-color-gray" defaultValue={this.packOptions.ditherLevels} onChange={this.onPropChanged}>
+                                    <option value="2">2 (strong)</option><option value="4">4</option><option value="8">8</option><option value="16">16 (subtle)</option>
+                                </select></td>
+                                <td></td>
+                            </tr>
+                            <tr title="PNG color depth. 24-bit RGB does not support an alpha channel; 8-bit means indexed color.">
+                                <td>PNG bit depth</td>
+                                <td><select ref="pngBitDepth" className="border-color-gray" defaultValue={this.packOptions.pngBitDepth} onChange={this.onPropChanged}>
+                                    <option value="32">32-bit RGBA</option><option value="24">24-bit RGB (no alpha)</option><option value="8">8-bit indexed (palette transparency)</option>
+                                </select></td>
                                 <td></td>
                             </tr>
                             <tr title={I18.f("FILTER_TITLE")}>
