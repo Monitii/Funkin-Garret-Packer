@@ -26,6 +26,15 @@ function blobToBase64(blob) {
     });
 }
 
+function blobToBytes(blob) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(new Uint8Array(reader.result));
+        reader.onerror = () => reject(reader.error || new Error("Could not read the encoded texture."));
+        reader.readAsArrayBuffer(blob);
+    });
+}
+
 let INSTANCE = null;
 
 class APP {
@@ -191,9 +200,15 @@ class APP {
             let exportCanvas = filter.apply(buffer);
             let mimeType = this.packOptions.textureFormat === "png" ? "image/png" : "image/jpeg";
             let imageBlob;
+            let imageBytes;
             let imageData = "";
             try {
                 imageBlob = await canvasToBlob(exportCanvas, mimeType);
+                if (!buffer.width || !buffer.height || !imageBlob.size) {
+                    throw new Error("The texture canvas exported empty. Check the sheet dimensions and scale, then try again.");
+                }
+                imageBytes = await blobToBytes(imageBlob);
+                if (!imageBytes.length) throw new Error("The encoded texture contains no image data.");
                 if (this.packOptions.base64Export) imageData = await blobToBase64(imageBlob);
             }
             catch (e) {
@@ -213,7 +228,7 @@ class APP {
 
             files.push({
                 name: `${fName}.${this.packOptions.textureFormat}`,
-                content: imageBlob,
+                content: imageBytes,
                 base64: false
             });
 

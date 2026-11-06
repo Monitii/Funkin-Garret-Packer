@@ -26,6 +26,9 @@ class Downloader {
                     else if(content && typeof content.arrayBuffer === 'function') {
                         content = Buffer.from(await content.arrayBuffer());
                     }
+                    else if(ArrayBuffer.isView(content)) {
+                        content = Buffer.from(content.buffer, content.byteOffset, content.byteLength);
+                    }
                     else if(content && typeof Blob !== 'undefined' && content instanceof Blob) {
                         content = await new Promise((resolve, reject) => {
                             let reader = new FileReader();
