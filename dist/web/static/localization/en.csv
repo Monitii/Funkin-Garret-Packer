@@ -56,9 +56,9 @@ FIXED_SIZE;Fixed size:
 POWER_OF_TWO;Power of two:
 POWER_OF_TWO_TITLE;Power of two texture size
 FIXED_SIZE_TITLE;Fixed texture size
-PADDING;Padding:
+PADDING;Sprite Padding:
 PADDING_TITLE;Sprites padding
-EXTRUDE;Extrude:
+EXTRUDE;Border padding:
 EXTRUDE_TITLE;Sprites border pixels extrude size
 ALLOW_ROTATION;Allow rotation:
 ALLOW_ROTATION_TITLE;Allow sprites rotation
@@ -139,3 +139,7 @@ SPLITTER;Repack / Split sheet
 SPLITTER_ERROR_NO_FRAMES;Sprites not found. Probably, atlas format is incorrect.
 DISABLE_UNTRIM;Disable Untrimming:
 REPACK;Repack
+CLEAR_STORED_ORDER_TITLE;Clears the order from the repack
+CLEAR_STORED_ORDER;Clear Stored Order
+SORT_EXPORT_TITLE;Sort Exported Rows
+SORT_EXPORT;Sort Exported Rows:

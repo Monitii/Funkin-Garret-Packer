@@ -139,3 +139,7 @@ SPLITTER;Распаковка атласа
 SPLITTER_ERROR_NO_FRAMES;Не найдено ни одного спрайта. Возможно, формат атласа неверен.
 DISABLE_UNTRIM;Обрезать:
 REPACK;Repack
+CLEAR_STORED_ORDER_TITLE;Clears the order from the repack
+CLEAR_STORED_ORDER;Clear Stored Order
+SORT_EXPORT_TITLE;Sort Exported Rows
+SORT_EXPORT;Sort Exported Rows:

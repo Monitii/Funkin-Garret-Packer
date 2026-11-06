@@ -1,9 +1,9 @@
 {
-  "name": "funkin-packer",
-  "displayName": "Funkin Packer",
+  "name": "garret-packer",
+  "displayName": "Garret Packer",
   "version": "0.1.3",
   "description": "Free online texture packer",
-  "url": "https://neeeoo.github.io/funkin-packer/",
+  "url": "https://monitii.github.io/Funkin-Garret-Packer/",
   "download": "http://free-tex-packer.com/download",
   "webApp": "http://free-tex-packer.com/app",
   "main": "src/index.js",
@@ -57,7 +57,7 @@
     "start": "webpack-dev-server --host 127.0.0.1 --port 4000",
     "start-electron": "webpack-dev-server --host 127.0.0.1 --port 4000 --platform electron",
     "build": "webpack",
-    "build-web": "webpack --build --platform web",
+    "build-web": "webpack --env platform=web",
     "build-web-watch": "webpack --build --watch --platform web",
     "serve": "webpack serve --open",
     "build-electron": "webpack --build --platform electron"
@@ -118,7 +118,7 @@
     "stream": "^0.0.2",
     "timers-browserify": "^2.0.12",
     "webpack": "^5.77.0",
-    "webpack-cli": "^5.0.1",
+    "webpack-cli": "^7.3.1",
     "xml2js": "^0.4.23"
   }
 }
