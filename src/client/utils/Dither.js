@@ -1,4 +1,4 @@
-// stolen from gimp hahaha
+// stolen from himp hahaha
 const toLinear = value => {
     value /= 255;
     return value <= 0.04045 ? value / 12.92 : Math.pow((value + 0.055) / 1.055, 2.4);
@@ -62,47 +62,77 @@ function limitDiffusionError(error, lowBleed) {
     return Math.sign(error) * limited;
 }
 
+function getBoxStats(box) {
+    const population = box.reduce((sum, color) => sum + color[3], 0);
+    const min = [255, 255, 255], max = [0, 0, 0];
+    for (const color of box) for (let c = 0; c < 3; c++) {
+        if (color[c] < min[c]) min[c] = color[c];
+        if (color[c] > max[c]) max[c] = color[c];
+    }
+    const mean = [0, 1, 2].map(c => Math.round(box.reduce((sum, color) => sum + color[c] * color[3], 0) / population));
+    const error = [0, 1, 2].map(c => box.reduce((sum, color) => {
+        const delta = color[c] - mean[c];
+        return sum + color[3] * delta * delta;
+    }, 0));
+    const volume = [0, 1, 2].reduce((sum, c) => {
+        const length = (1 + max[c] - min[c]) * GIMP_LAB_WEIGHTS[c];
+        return sum + length * length;
+    }, 0);
+    return { min, max, mean, error, volume };
+}
+
 function makePalette(colors, limit) {
-    const samples = colors.map(color => [...color, rgbToLabCoordinates(color).map(Math.round)]);
-    let boxes = [samples];
+    let boxes = [colors];
     while (boxes.length < limit) {
         let choice = -1;
         let bestScore = 0;
         let splitChannel = 0;
+        let choiceStats = null;
         for (let b = 0; b < boxes.length; b++) {
             const box = boxes[b];
             if (box.length < 2) continue;
-            const population = box.reduce((sum, color) => sum + color[3], 0);
-            const means = [0, 1, 2].map(c => box.reduce((sum, color) => sum + color[4][c] * color[3], 0) / population);
-            const errors = [0, 1, 2].map(c => box.reduce((sum, color) => {
-                const delta = color[4][c] - means[c];
-                return sum + color[3] * delta * delta;
-            }, 0) * GIMP_LAB_WEIGHTS[c] * GIMP_LAB_WEIGHTS[c]);
+            const stats = getBoxStats(box);
+            if (!stats.volume) continue;
+            const errors = stats.error.map((value, c) => value * GIMP_LAB_WEIGHTS[c] * GIMP_LAB_WEIGHTS[c]);
             const channel = errors.indexOf(Math.max(...errors));
             let score = errors[channel];
             if (limit <= 16 && boxes.length <= 2) {
                 const lightnessBias = boxes.length === 1 ? 2.66 : 1.33;
                 if (channel === 0) score *= lightnessBias;
             }
-            if (score > bestScore) { bestScore = score; choice = b; splitChannel = channel; }
-        }
-        if (choice < 0) break;
-        const box = boxes.splice(choice, 1)[0].slice().sort((a, b) => a[4][splitChannel] - b[4][splitChannel]);
-        const total = box.reduce((sum, color) => sum + color[3], 0);
-        let sum = 0, split = 0;
-        for (; split < box.length - 1; split++) {
-            sum += box[split][3];
-            if (sum >= total / 2) {
-                split++;
-                break;
+            if (score > bestScore) {
+                bestScore = score;
+                choice = b;
+                splitChannel = channel;
+                choiceStats = stats;
             }
         }
-        split = Math.max(1, Math.min(box.length - 1, split));
-        boxes.push(box.slice(0, split), box.slice(split));
+        if (choice < 0) break;
+
+        const box = boxes.splice(choice, 1)[0];
+        const lengths = [0, 1, 2].map(c => (1 + choiceStats.max[c] - choiceStats.min[c]) * GIMP_LAB_WEIGHTS[c]);
+        const sortedLengths = lengths.slice().sort((a, b) => b - a);
+        const longest = sortedLengths[0];
+        const secondLongest = sortedLengths[1] || 1;
+        let ratio = Math.floor((longest + secondLongest / 2) / secondLongest);
+        ratio = Math.min(ratio, limit - boxes.length - 1);
+        let splitAt = choiceStats.min[splitChannel] + Math.floor((choiceStats.max[splitChannel] - choiceStats.min[splitChannel] + 1) / 2);
+        if (ratio > 2) {
+            splitAt = choiceStats.min[splitChannel] + Math.floor((choiceStats.max[splitChannel] - choiceStats.min[splitChannel] + Math.floor(ratio / 2)) / ratio);
+        }
+        if (splitAt >= choiceStats.max[splitChannel]) splitAt = choiceStats.min[splitChannel];
+        let lower = box.filter(color => color[splitChannel] <= splitAt);
+        let upper = box.filter(color => color[splitChannel] > splitAt);
+        if (!lower.length || !upper.length) {
+            const ordered = box.slice().sort((a, b) => a[splitChannel] - b[splitChannel]);
+            const split = Math.max(1, Math.min(ordered.length - 1, Math.floor(ordered.length / 2)));
+            lower = ordered.slice(0, split);
+            upper = ordered.slice(split);
+        }
+        boxes.push(lower, upper);
     }
     return boxes.map(box => {
-        const weight = box.reduce((sum, c) => sum + c[3], 0);
-        const labCoordinates = [0, 1, 2].map(channel => box.reduce((sum, c) => sum + c[4][channel] * c[3], 0) / weight);
+        const { mean: labCoordinates } = getBoxStats(box);
         return labCoordinatesToRgb(labCoordinates);
     });
 }
@@ -113,10 +143,11 @@ export function ditherImageData(imageData, colorLimit = 16, lowBleed = true) {
     const histogram = new Map();
     for (let i = 0; i < data.length; i += 4) {
         if (!data[i + 3]) continue;
-        const key = (data[i] << 16) | (data[i + 1] << 8) | data[i + 2];
+        const coordinates = rgbToLabCoordinates([data[i], data[i + 1], data[i + 2]]).map(Math.round);
+        const key = (coordinates[0] << 16) | (coordinates[1] << 8) | coordinates[2];
         const color = histogram.get(key);
         if (color) color[3]++;
-        else histogram.set(key, [data[i], data[i + 1], data[i + 2], 1]);
+        else histogram.set(key, [...coordinates, 1]);
     }
     const colors = Array.from(histogram.values());
     if (colors.length <= limit) return imageData;
