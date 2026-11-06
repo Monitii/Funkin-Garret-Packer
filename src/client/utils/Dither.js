@@ -89,11 +89,15 @@ function makePalette(colors, limit) {
         if (choice < 0) break;
         const box = boxes.splice(choice, 1)[0].slice().sort((a, b) => a[4][splitChannel] - b[4][splitChannel]);
         const total = box.reduce((sum, color) => sum + color[3], 0);
-        let sum = 0, split = 1;
-        for (; split < box.length; split++) {
-            sum += box[split - 1][3];
-            if (sum >= total / 2) break;
+        let sum = 0, split = 0;
+        for (; split < box.length - 1; split++) {
+            sum += box[split][3];
+            if (sum >= total / 2) {
+                split++;
+                break;
+            }
         }
+        split = Math.max(1, Math.min(box.length - 1, split));
         boxes.push(box.slice(0, split), box.slice(split));
     }
     return boxes.map(box => {

@@ -63,7 +63,7 @@ class TextureRenderer {
     }
 
     render(data, options={}) {
-        let ctx = this.buffer.getContext("2d");
+        let ctx = this.buffer.getContext("2d", { willReadFrequently: true });
 
         let { width, height } = TextureRenderer.getSize(data, options);
 
